@@ -1,0 +1,53 @@
+services:
+  # ① 監視対象の本番Webサービス役（ECサイトだと思ってください）
+  nginx:
+    image: nginx:latest
+    container_name: portfolio-nginx
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+  # ② 監視の心臓部：データ収集＋異常判定
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: portfolio-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/alert.rules.yml:/etc/prometheus/alert.rules.yml
+    restart: unless-stopped
+
+  # ③ 可視化：あなたが見るダッシュボード
+  grafana:
+    image: grafana/grafana:latest
+    container_name: portfolio-grafana
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  # ④ リソース監視：サーバーのCPU/メモリ/ディスクを報告
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: portfolio-node-exporter
+    ports:
+      - "9100:9100"
+    restart: unless-stopped
+
+  # ⑤ 外形監視：外からHTTPで叩いて死活確認
+  blackbox-exporter:
+    image: prom/blackbox-exporter:latest
+    container_name: portfolio-blackbox-exporter
+    ports:
+      - "9115:9115"
+    restart: unless-stopped
+
+  # ⑥ アラート振り分け：異常を通知する係
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: portfolio-alertmanager
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    ports:
+      - "9093:9093"
+    restart: unless-stopped

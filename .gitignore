@@ -1,0 +1,14 @@
+# 環境変数・機密情報
+.env
+*.env
+secrets/
+
+# Grafana の永続データ（今回は未使用だが将来用）
+grafana-data/
+
+# OS が生成するファイル
+.DS_Store
+Thumbs.db
+
+# エディタ設定
+.vscode/

@@ -1,0 +1,66 @@
+groups:
+  # ===== サービス死活監視（最優先）=====
+  - name: service_availability
+    rules:
+      # ① Webサービスが応答しない
+      - alert: WebServiceDown
+        expr: probe_success == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Webサービスがダウンしています"
+          description: "{{ $labels.instance }} が1分以上応答していません。ユーザーはサイトにアクセスできない状態です。"
+
+      # ② 監視対象そのものと通信できない
+      - alert: TargetDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "監視対象と通信できません"
+          description: "{{ $labels.job }} ({{ $labels.instance }}) から2分以上メトリクスを取得できていません。"
+
+  # ===== サーバーリソース監視 =====
+  - name: resource_usage
+    rules:
+      # ③ CPU使用率が高い
+      - alert: HighCpuUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU使用率が高い状態です"
+          description: "{{ $labels.instance }} のCPU使用率が5分以上80%を超えています。"
+
+      # ④ メモリ使用率が高い
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "メモリ使用率が高い状態です"
+          description: "{{ $labels.instance }} のメモリ使用率が5分以上85%を超えています。"
+
+      # ⑤ ディスク空き容量が少ない
+      - alert: LowDiskSpace
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 20
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ディスク空き容量が不足しています"
+          description: "{{ $labels.instance }} のルートパーティション空き容量が20%を下回っています。"
+
+      # ⑥ ディスク空き容量が危機的
+      - alert: CriticalDiskSpace
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 10
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ディスク空き容量が危機的です"
+          description: "{{ $labels.instance }} の空き容量が10%未満です。即時対応が必要です。"

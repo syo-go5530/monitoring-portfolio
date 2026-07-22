@@ -1,0 +1,16 @@
+# 全体設定
+global:
+  resolve_timeout: 5m   # 異常が解消したとみなすまでの待ち時間
+
+# アラートをどう振り分けるか
+route:
+  group_by: ['alertname']   # 同じ種類のアラートはまとめる
+  group_wait: 30s           # 最初のアラートを送る前に30秒待って仲間を集める
+  group_interval: 5m        # 同じグループの次の通知までの間隔
+  repeat_interval: 3h       # 未解決のまま同じ通知を繰り返す間隔
+  receiver: 'default'       # 送り先（下で定義）
+
+# 送り先の定義
+receivers:
+  - name: 'default'
+    # 今は通知先を設定せず、Alertmanagerが受信・集約する動作までを確認する

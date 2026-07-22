@@ -1,0 +1,43 @@
+# グローバル設定：全体に共通するルール
+global:
+  scrape_interval: 15s      # 15秒ごとにデータを集めに行く
+  evaluation_interval: 15s  # 15秒ごとにアラート条件を判定する
+
+# アラートルールを書いたファイルを読み込む
+rule_files:
+  - "alert.rules.yml"
+
+# Alertmanager（アラート振り分け係）との連携設定
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - "alertmanager:9093"
+
+# ここが本体：誰からデータを集めるか（監視対象の一覧）
+scrape_configs:
+  # ① Prometheus自身を監視（自分の健康状態も見る）
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # ② サーバーのリソース監視（CPU/メモリ/ディスク）
+  - job_name: "node-exporter"
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  # ③ 外形監視：Blackbox経由でnginxの死活を確認
+  - job_name: "blackbox-http"
+    metrics_path: /probe
+    params:
+      module: [http_2xx]      # 「HTTPで200番台が返るか」を確認するモジュール
+    static_configs:
+      - targets:
+          - http://nginx:80    # 監視対象のURL（nginxコンテナ）
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
