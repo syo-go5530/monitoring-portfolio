@@ -32,6 +32,8 @@ services:
     container_name: portfolio-node-exporter
     ports:
       - "9100:9100"
+    tmpfs:
+      - /disktest:size=100m
     restart: unless-stopped
 
   # ⑤ 外形監視：外からHTTPで叩いて死活確認
